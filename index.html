@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>dilseSuno | Piku 3D Companion</title>
+  
+  <!-- Google Model Viewer -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+
+  <style>
+    :root {
+      --cyan-glow: #00f3ff;
+      --purple-glow: #a855f7;
+      --magenta-glow: #ff007f;
+      --bg-gradient: radial-gradient(circle at 50% 30%, #130a2a, #040209, #000000);
+      --card-bg: rgba(12, 16, 32, 0.65);
+      --card-border: rgba(0, 243, 255, 0.25);
+      --hud-text: #00f3ff;
+    }
+
+    body.ghost-mode {
+      --cyan-glow: #ff2a2a;
+      --purple-glow: #990000;
+      --magenta-glow: #ff5500;
+      --bg-gradient: radial-gradient(circle at 50% 30%, #2a0505, #0a0101, #000000);
+      --card-border: rgba(255, 42, 42, 0.35);
+      --hud-text: #ff2a2a;
+    }
+
+    /* 🌌 HOLOGRAM PARTY MULTIVERSE THEME */
+    body.party-mode {
+      --cyan-glow: #ff007f;
+      --purple-glow: #00f3ff;
+      --magenta-glow: #00ff88;
+      --bg-gradient: radial-gradient(circle at 50% 30%, #2b0042, #0c0018, #000000);
+      --card-border: rgba(255, 0, 127, 0.5);
+      --hud-text: #ff007f;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background: #020205;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Animated Cyber Grid & Canvas */
+    #bgCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    /* App Shell Container */
+    .app-shell {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 460px;
+      height: 100%;
+      max-height: 100dvh;
+      background: var(--bg-gradient);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 12px;
+      box-shadow: 0 0 60px rgba(0, 243, 255, 0.15), inset 0 0 40px rgba(0,0,0,0.8);
+      transition: all 0.5s ease;
+    }
+
+    @media (min-width: 768px) {
+      .app-shell {
+        height: 94vh;
+        max-height: 880px;
+        border-radius: 28px;
+        border: 1px solid var(--card-border);
+      }
+    }
+
+    /* Header & Cyber Status */
+    header {
+      text-align: center;
+      flex-shrink: 0;
+      padding-top: 4px;
+      position: relative;
+    }
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--cyan-glow), #ffffff, var(--magenta-glow));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+    }
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      padding: 3px 14px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      background: rgba(0, 243, 255, 0.08);
+      color: var(--hud-text);
+      border: 1px solid var(--card-border);
+      box-shadow: 0 0 10px rgba(0, 243, 255, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    /* Top Controls Scroll Bar */
+    .controls-top {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      overflow-x: auto;
+      padding: 4px 2px 6px 2px;
+      scrollbar-width: none;
+    }
+    .controls-top::-webkit-scrollbar { display: none; }
+
+    .pill-btn {
+      flex-shrink: 0;
+      background: rgba(12, 20, 40, 0.6);
+      border: 1px solid var(--card-border);
+      color: #e4e4e7;
+      padding: 7px 14px;
+      border-radius: 14px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.03);
+      transition: all 0.3s ease;
+    }
+    .pill-btn:active { transform: scale(0.96); }
+    
+    .pill-btn.active {
+      background: linear-gradient(135deg, rgba(0, 243, 255, 0.3), rgba(168, 85, 247, 0.4));
+      color: #fff;
+      border-color: var(--cyan-glow);
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+    .pill-btn.savage-active {
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      color: white;
+      border-color: #ff5500;
+      box-shadow: 0 0 15px #ff5500;
+    }
+    .pill-btn.cheeky-active {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+      color: white;
+      border-color: #f43f5e;
+      box-shadow: 0 0 15px #f43f5e;
+    }
+    .pill-btn.ghost-active {
+      background: linear-gradient(135deg, #7f1d1d, #ef4444);
+      color: white;
+      border-color: #ff2a2a;
+      box-shadow: 0 0 15px #ff2a2a;
+    }
+    .pill-btn.party-btn-active {
+      background: linear-gradient(135deg, #ff007f, #00f3ff);
+      color: white;
+      border-color: #ff007f;
+      box-shadow: 0 0 20px #ff007f;
+      animation: partyPulse 1s infinite alternate;
+    }
+
+    @keyframes partyPulse {
+      0% { box-shadow: 0 0 10px #ff007f; }
+      100% { box-shadow: 0 0 25px #00f3ff; }
+    }
+
+    /* Main Experience Container */
+    .experience-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      margin: 8px 0;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(16px);
+      border-radius: 22px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 243, 255, 0.05);
+    }
+
+    .experience-container::before, .experience-container::after {
+      content: '';
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--cyan-glow);
+      pointer-events: none;
+      z-index: 10;
+    }
+    .experience-container::before { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+    .experience-container::after { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+    /* 3D Piku Stage */
+    .piku-stage {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: flex 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .piku-stage.compact {
+      flex: 0 0 34%;
+    }
+
+    /* Holographic Projection Ring Pedestal */
+    .holo-pedestal {
+      position: absolute;
+      bottom: 15%;
+      width: 160px;
+      height: 50px;
+      background: radial-gradient(ellipse at center, rgba(0, 243, 255, 0.4) 0%, rgba(168, 85, 247, 0.2) 50%, transparent 70%);
+      border: 1px dashed var(--cyan-glow);
+      border-radius: 50%;
+      transform: rotateX(75deg);
+      box-shadow: 0 0 25px var(--cyan-glow), inset 0 0 12px var(--cyan-glow);
+      animation: holoRotate 8s linear infinite;
+      z-index: 4;
+      pointer-events: none;
+      transition: all 0.5s ease;
+    }
+
+    @keyframes holoRotate {
+      0% { transform: rotateX(75deg) rotate(0deg); }
+      100% { transform: rotateX(75deg) rotate(360deg); }
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      background-color: transparent;
+      z-index: 5;
+      transition: all 0.5s ease;
+      transform: translateY(12px) scale(0.92);
+    }
+
+    /* 🌟 PARTY MODE: ULTRA HOLOGRAM BEAM & LIGHT PROJECTION */
+    .party-mode .holo-pedestal {
+      width: 190px;
+      height: 60px;
+      background: radial-gradient(ellipse at center, rgba(255, 0, 127, 0.8) 0%, rgba(0, 243, 255, 0.5) 40%, transparent 80%);
+      border: 2px dashed #ff007f;
+      box-shadow: 0 0 40px #ff007f, inset 0 0 20px #00f3ff;
+      animation: holoRotate 3s linear infinite;
+    }
+
+    /* Vertical Light Projection Cone in Party Mode */
+    .party-mode .piku-stage::before {
+      content: '';
+      position: absolute;
+      bottom: 17%;
+      width: 130px;
+      height: 250px;
+      background: linear-gradient(to top, rgba(255, 0, 127, 0.35), rgba(0, 243, 255, 0.15), transparent);
+      clip-path: polygon(15% 100%, 85% 100%, 100% 0, 0 0);
+      pointer-events: none;
+      z-index: 4;
+      animation: beamFlicker 0.12s infinite alternate;
+    }
+
+    @keyframes beamFlicker {
+      0% { opacity: 0.65; }
+      100% { opacity: 0.95; }
+    }
+
+    /* Party Mode Hologram Model Look: Color Shift + Transparency + Glitch */
+    .party-mode model-viewer {
+      filter: drop-shadow(0 0 25px #ff007f) drop-shadow(0 0 45px #00f3ff) hue-rotate(140deg) contrast(150%) brightness(125%) opacity(0.85);
+      animation: partyHoloGlitch 3.5s infinite;
+    }
+
+    @keyframes partyHoloGlitch {
+      0%, 90%, 100% { transform: translateY(12px) scale(0.92) skewX(0deg); }
+      91% { transform: translateY(10px) scale(0.94) skewX(3deg) filter: hue-rotate(200deg); }
+      93% { transform: translateY(14px) scale(0.90) skewX(-3deg); }
+      95% { transform: translateY(12px) scale(0.92) skewX(0deg); }
+    }
+
+    /* Talking Motion */
+    .talking-motion model-viewer {
+      animation: talkBounce 0.4s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 35px var(--cyan-glow));
+    }
+
+    @keyframes talkBounce {
+      0% { transform: translateY(5px) scale(0.92); }
+      100% { transform: translateY(-8px) scale(0.95); }
+    }
+
+    /* 🌟 DYNAMIC MODE-SPECIFIC FLOATING ANIMATIONS */
+    .piku-stage.anim-wholesome { animation: floatWholesome 4s ease-in-out infinite; }
+    .piku-stage.anim-cheeky { animation: floatCheeky 2.2s ease-in-out infinite; }
+    .piku-stage.anim-savage { animation: floatSavage 1.6s ease-in-out infinite; }
+    .piku-stage.anim-ghost { animation: floatGhost 5s ease-in-out infinite; }
+    .piku-stage.anim-party { animation: floatParty 0.8s ease-in-out infinite alternate; }
+
+    @keyframes floatWholesome {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes floatCheeky {
+      0%, 100% { transform: translateY(0px) translateX(0px) rotate(0deg); }
+      25% { transform: translateY(-7px) translateX(5px) rotate(2deg); }
+      75% { transform: translateY(-7px) translateX(-5px) rotate(-2deg); }
+    }
+    @keyframes floatSavage {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-12px) scale(1.04); }
+    }
+    @keyframes floatGhost {
+      0%, 100% { transform: translateY(0px); opacity: 0.95; }
+      50% { transform: translateY(-16px); opacity: 0.75; }
+    }
+    @keyframes floatParty {
+      0% { transform: translateY(0px) rotate(0deg) scale(1); }
+      100% { transform: translateY(-14px) rotate(3deg) scale(1.05); }
+    }
+
+    /* Integrated Chat Section */
+    .chat-section {
+      display: flex;
+      flex-direction: column;
+      height: 52%;
+      border-top: 1px solid var(--card-border);
+      background: rgba(4, 8, 20, 0.7);
+      transition: all 0.4s ease;
+    }
+    
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--cyan-glow); border-radius: 4px; }
+
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      animation: fadeIn 0.3s ease;
+      position: relative;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.9));
+      color: white;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-bottom-right-radius: 2px;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+    .msg.bot {
+      align-self: flex-start;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--card-border);
+      color: #f4f4f5;
+      border-bottom-left-radius: 2px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    .msg.bot:hover { border-color: var(--cyan-glow); }
+    .msg-hint { font-size: 0.65rem; color: var(--hud-text); opacity: 0.8; display: block; margin-top: 4px; text-align: right; }
+
+    /* Bottom Control Bar */
+    .bottom-bar {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .talk-btn {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(0, 243, 255, 0.8), rgba(168, 85, 247, 0.9));
+      color: #020205;
+      border: none;
+      padding: 15px;
+      border-radius: 25px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 25px var(--cyan-glow);
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+    }
+    .talk-btn.listening {
+      background: linear-gradient(135deg, #ef4444, #ff007f);
+      color: #fff;
+      box-shadow: 0 0 25px #ff007f;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(2, 4, 12, 0.8);
+      border-top: 1px solid var(--card-border);
+    }
+    .chat-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 10px 14px;
+      color: white;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .chat-input:focus { border-color: var(--cyan-glow); box-shadow: 0 0 10px var(--cyan-glow); }
+    
+    .send-btn {
+      background: var(--cyan-glow);
+      border: none;
+      color: #020205;
+      padding: 0 18px;
+      border-radius: 20px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .visualizer {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 16px;
+    }
+    .visualizer.active { display: flex; }
+    .bar {
+      width: 3px;
+      height: 100%;
+      background: var(--cyan-glow);
+      border-radius: 2px;
+      animation: bounce 0.6s infinite alternate;
+      box-shadow: 0 0 6px var(--cyan-glow);
+    }
+    .bar:nth-child(2) { animation-delay: 0.2s; }
+    .bar:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0% { height: 3px; } 100% { height: 16px; } }
+
+    /* Modal / Share Wrapped */
+    .share-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(16px);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 16px;
+    }
+    .share-modal.active { display: flex; }
+
+    .wrapped-card {
+      width: 100%;
+      max-width: 340px;
+      background: linear-gradient(160deg, rgba(19, 10, 42, 0.95), rgba(4, 8, 20, 0.98));
+      border: 2px solid var(--cyan-glow);
+      box-shadow: 0 0 50px var(--cyan-glow);
+      border-radius: 24px;
+      padding: 22px;
+      text-align: center;
+      position: relative;
+    }
+    .wrapped-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: rgba(0, 243, 255, 0.15);
+      border: 1px solid var(--cyan-glow);
+      padding: 4px 12px;
+      border-radius: 12px;
+      color: var(--cyan-glow);
+      margin-bottom: 12px;
+    }
+    .wrapped-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #fff;
+    }
+    .wrapped-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 16px 0;
+    }
+    .stat-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--card-border);
+      padding: 10px;
+      border-radius: 14px;
+      font-size: 0.75rem;
+    }
+    .stat-val { font-size: 1.1rem; font-weight: 800; color: var(--cyan-glow); margin-top: 2px; }
+    
+    .wrapped-quote {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #e4e4e7;
+      font-style: italic;
+      margin: 14px 0;
+      line-height: 1.4;
+      background: rgba(0, 243, 255, 0.05);
+      border: 1px dashed var(--card-border);
+      padding: 12px;
+      border-radius: 12px;
+    }
+    .wrapped-footer {
+      font-size: 0.72rem;
+      color: #10b981;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+    }
+    .close-btn {
+      margin-top: 12px;
+      background: var(--cyan-glow);
+      border: none;
+      color: #020205;
+      padding: 11px 22px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+    .dismiss-btn {
+      margin-top: 8px;
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dynamic Cyber Grid Background -->
+  <canvas id="bgCanvas"></canvas>
+
+  <div class="app-shell">
+    <header>
+      <h1>dilseSuno</h1>
+      <div id="statusBadge" class="status-badge">⚡ ONLINE // SYSTEM READY</div>
+
+      <div class="controls-top">
+        <button id="modeVoice" class="pill-btn active" onclick="switchTab('voice')">🎙️ Voice</button>
+        <button id="modeText" class="pill-btn" onclick="switchTab('text')">💬 Chat</button>
+        <button id="modePersonality" class="pill-btn" onclick="togglePersonality()">💚 Wholesome</button>
+        <button id="cheekyBtn" class="pill-btn" onclick="toggleCheekyMode()">😈 Cheeku Mode</button>
+        <button id="ghostBtn" class="pill-btn" onclick="toggleGhostMode()">👁️ Midnight</button>
+        <button id="partyBtn" class="pill-btn" onclick="togglePartyMode()">⚡ Cyberpunk</button>
+        <button class="pill-btn" onclick="generatePersonaWrapped()">🎴 Persona Wrapped</button>
+      </div>
+    </header>
+
+    <div class="experience-container">
+      
+      <!-- 3D Piku Stage with Holographic Ring & Floating Effect -->
+      <div id="pikuStage" class="piku-stage">
+        <div class="holo-pedestal"></div>
+        <model-viewer 
+          id="robotModel"
+          src="./character.glb" 
+          alt="dilseSuno AI Companion" 
+          camera-controls 
+          shadow-intensity="1.5"
+          camera-orbit="0deg 75deg 100%"
+          bounds="tight"
+          loading="eager"
+          interaction-prompt="none">
+        </model-viewer>
+      </div>
+
+      <div id="chatSection" class="chat-section" style="display: none;">
+        <div id="chatMessages" class="chat-messages">
+          <div class="msg bot" onclick="openShareCard(this.innerText)">
+            System initialized. Main Piku hoon 🤖 Aap mujhse bol kar ya likh kar baat kar sakte hain!
+            <span class="msg-hint"> Tap to share card 📸</span>
+          </div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" id="textInput" class="chat-input" placeholder="Initiate command..." onkeypress="handleKeyPress(event)">
+          <button class="send-btn" onclick="sendTextMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <div id="visualizer" class="visualizer">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+
+      <button id="talkBtn" class="talk-btn" onclick="toggleSpeech()">
+        🎙️ Tap to talk with Piku
+      </button>
+    </div>
+  </div>
+
+  <!-- INSTA STORY / WEB SHARE MODAL -->
+  <div id="shareModal" class="share-modal">
+    <div class="wrapped-card">
+      <div class="wrapped-badge">dilseSuno Wrapped</div>
+      <div class="wrapped-title" id="cardTitle">Piku's Persona Card</div>
+      
+      <div class="wrapped-stats">
+        <div class="stat-box">Vibe Match<div class="stat-val" id="statVibe">94%</div></div>
+        <div class="stat-box">Savage Level<div class="stat-val" id="statSavage">🔥 High</div></div>
+      </div>
+
+      <div id="cardQuoteText" class="wrapped-quote">"Reels dekhna band kar aur padhai par dhyan de!"</div>
+      <div class="wrapped-footer">dilseSuno-web.vercel.app</div>
+
+      <button class="close-btn" onclick="shareCardNative()">🚀 Share to Insta Story / Friends</button>
+      <button class="dismiss-btn" onclick="closeShareCard()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const talkBtn = document.getElementById('talkBtn');
+    const statusBadge = document.getElementById('statusBadge');
+    const pikuStage = document.getElementById('pikuStage');
+    const chatSection = document.getElementById('chatSection');
+    const chatMessages = document.getElementById('chatMessages');
+    const textInput = document.getElementById('textInput');
+    const modePersonality = document.getElementById('modePersonality');
+    const cheekyBtn = document.getElementById('cheekyBtn');
+    const partyBtn = document.getElementById('partyBtn');
+    const visualizer = document.getElementById('visualizer');
+    const ghostBtn = document.getElementById('ghostBtn');
+
+    let isSavage = false;
+    let isCheeky = false;
+    let isGhost = false;
+    let isParty = false;
+    let isListening = false;
+    let isSpeaking = false;
+    let currentTab = 'voice';
+    let currentAudio = null;
+
+    function haptic(ms = 15) {
+      if (navigator.vibrate) navigator.vibrate(ms);
+    }
+
+    // Dynamic Sci-Fi Cyber Grid & Starfield Engine
+    const canvas = document.getElementById('bgCanvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    let gridOffset = 0;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Star {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 2 + 0.5;
+        this.speedY = Math.random() * -0.6 - 0.2;
+        this.opacity = Math.random() * 0.7 + 0.2;
+      }
+      update() {
+        let speedMultiplier = isSpeaking ? 2.5 : (isParty ? 3.0 : 1.0);
+        this.y += this.speedY * speedMultiplier;
+        if (this.y < 0) this.reset();
+      }
+      draw() {
+        if (isParty) {
+          ctx.fillStyle = Math.random() > 0.5 ? `rgba(255, 0, 127, ${this.opacity})` : `rgba(0, 243, 255, ${this.opacity})`;
+        } else {
+          ctx.fillStyle = isGhost ? `rgba(255, 42, 42, ${this.opacity})` : `rgba(0, 243, 255, ${this.opacity})`;
+        }
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    for (let i = 0; i < 60; i++) stars.push(new Star());
+
+    function drawSciFiGrid() {
+      if (isParty) {
+        ctx.strokeStyle = 'rgba(255, 0, 127, 0.12)';
+      } else {
+        ctx.strokeStyle = isGhost ? 'rgba(255, 42, 42, 0.08)' : 'rgba(0, 243, 255, 0.06)';
+      }
+      ctx.lineWidth = 1;
+      
+      gridOffset = (gridOffset + (isSpeaking ? 1.5 : (isParty ? 2.0 : 0.4))) % 30;
+
+      for (let x = 0; x < canvas.width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+
+      for (let y = gridOffset; y < canvas.height; y += 30) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function animateCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawSciFiGrid();
+      stars.forEach(s => { s.update(); s.draw(); });
+      requestAnimationFrame(animateCanvas);
+    }
+    animateCanvas();
+
+    // Auto Midnight Ghost
+    function autoDetectMidnight() {
+      const hour = new Date().getHours();
+      if (hour >= 23 || hour < 4) enableGhostTheme(true);
+    }
+    autoDetectMidnight();
+
+    function enableGhostTheme(enable) {
+      haptic(30);
+      isGhost = enable;
+      document.body.classList.toggle('ghost-mode', isGhost);
+      ghostBtn.classList.toggle('ghost-active', isGhost);
+      updateModeAnimation();
+      resetStatus();
+    }
+
+    window.toggleGhostMode = () => enableGhostTheme(!isGhost);
+
+    window.switchTab = (tab) => {
+      haptic(10);
+      currentTab = tab;
+      document.getElementById('modeVoice').classList.toggle('active', tab === 'voice');
+      document.getElementById('modeText').classList.toggle('active', tab === 'text');
+      
+      if (tab === 'text') {
+        talkBtn.style.display = 'none';
+        visualizer.style.display = 'none';
+        chatSection.style.display = 'flex';
+        pikuStage.classList.add('compact');
+      } else {
+        talkBtn.style.display = 'flex';
+        chatSection.style.display = 'none';
+        pikuStage.classList.remove('compact');
+      }
+    };
+
+    window.togglePersonality = () => {
+      haptic(20);
+      isSavage = !isSavage;
+      if (isSavage) {
+        isCheeky = false;
+        cheekyBtn.classList.remove('cheeky-active');
+      }
+      modePersonality.innerText = isSavage ? "🔥 Savage Roast" : "💚 Wholesome";
+      modePersonality.classList.toggle('savage-active', isSavage);
+      updateModeAnimation();
+      resetStatus();
+    };
+
+    window.toggleCheekyMode = () => {
+      haptic(20);
+      isCheeky = !isCheeky;
+      if (isCheeky) {
+        isSavage = false;
+        modePersonality.innerText = "💚 Wholesome";
+        modePersonality.classList.remove('savage-active');
+      }
+      cheekyBtn.classList.toggle('cheeky-active', isCheeky);
+      updateModeAnimation();
+      resetStatus();
+    };
+
+    // ⚡ PARTY MODE HOLOGRAM MULTIVERSE SWITCH
+    window.togglePartyMode = () => {
+      haptic(30);
+      isParty = !isParty;
+      document.body.classList.toggle('party-mode', isParty);
+      partyBtn.classList.toggle('party-btn-active', isParty);
+      partyBtn.innerText = isParty ? "🔮 Hologram Multiverse" : "⚡ Cyberpunk";
+      updateModeAnimation();
+      resetStatus();
+    };
+
+    // 🌟 DYNAMIC MODE ANIMATION MANAGER
+    function updateModeAnimation() {
+      pikuStage.classList.remove('anim-wholesome', 'anim-cheeky', 'anim-savage', 'anim-ghost', 'anim-party');
+      
+      if (isParty) {
+        pikuStage.classList.add('anim-party');
+      } else if (isGhost) {
+        pikuStage.classList.add('anim-ghost');
+      } else if (isCheeky) {
+        pikuStage.classList.add('anim-cheeky');
+      } else if (isSavage) {
+        pikuStage.classList.add('anim-savage');
+      } else {
+        pikuStage.classList.add('anim-wholesome');
+      }
+    }
+
+    // Speech Engine
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        isListening = true;
+        talkBtn.innerHTML = "🛑 LISTENING...";
+        talkBtn.classList.add('listening');
+        statusBadge.innerText = "🎙️ SCANNING VOICE INPUT...";
+        statusBadge.style.color = "#ff007f";
+      };
+
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        addMessage(text, 'user');
+        statusBadge.innerText = "⚡ PROCESSING NEURAL LOGIC...";
+        statusBadge.style.color = "#00f3ff";
+        respondToUser(text);
+      };
+
+      recognition.onerror = () => resetUI();
+      recognition.onend = () => {
+        if (statusBadge.innerText.includes("SCANNING")) resetUI();
+      };
+    }
+
+    window.toggleSpeech = () => {
+      haptic(15);
+      if (!SpeechRecognition) {
+        alert("Voice recognition not supported.");
+        return;
+      }
+      if (isListening) recognition.stop();
+      else recognition.start();
+    };
+
+    function sendTextMessage() {
+      haptic(10);
+      const text = textInput.value.trim();
+      if (!text) return;
+      addMessage(text, 'user');
+      textInput.value = '';
+      statusBadge.innerText = "⚡ PROCESSING NEURAL LOGIC...";
+      statusBadge.style.color = "#00f3ff";
+      respondToUser(text);
+    }
+
+    function handleKeyPress(e) { if (e.key === 'Enter') sendTextMessage(); }
+
+    function addMessage(text, sender) {
+      const msg = document.createElement('div');
+      msg.className = `msg ${sender}`;
+      msg.innerHTML = text + (sender === 'bot' ? '<span class="msg-hint">Tap to share card 📸</span>' : '');
+
+      if (sender === 'bot') {
+        msg.onclick = () => openShareCard(text);
+      }
+
+      chatMessages.appendChild(msg);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // 🚀 GROQ + ELEVENLABS REAL-TIME SERVERLESS BACKEND CONNECT
+    async function respondToUser(text) {
+      let activeMode = 'wholesome';
+      if (isGhost) activeMode = 'ghost';
+      else if (isCheeky) activeMode = 'cheeky';
+      else if (isSavage) activeMode = 'savage';
+
+      try {
+        statusBadge.innerText = "🧠 GENERATING REAL VOICE...";
+        statusBadge.style.color = "#a855f7";
+
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, mode: activeMode })
+        });
+
+        if (!response.ok) throw new Error("Server error");
+
+        const data = await response.json();
+        addMessage(data.text, 'bot');
+
+        if (data.audio) {
+          playRealHumanVoice(data.audio);
+        } else {
+          speak(data.text);
+        }
+      } catch (err) {
+        console.error("Backend Error:", err);
+        const fallback = "Arey yaar, thoda network glitch ho gaya! Dobara bolo na.";
+        addMessage(fallback, 'bot');
+        speak(fallback);
+      }
+    }
+
+    // Real Human Voice Player
+    function playRealHumanVoice(audioSrc) {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+
+      currentAudio = new Audio(audioSrc);
+      
+      currentAudio.onplay = () => {
+        isSpeaking = true;
+        statusBadge.innerText = "🗣️ PIKU IS SPEAKING...";
+        statusBadge.style.color = "#ff007f";
+        pikuStage.classList.add('talking-motion');
+        if (currentTab === 'voice') visualizer.classList.add('active');
+      };
+
+      currentAudio.onended = () => { resetUI(); currentAudio = null; };
+      currentAudio.onerror = () => { resetUI(); currentAudio = null; };
+
+      currentAudio.play().catch(e => {
+        console.error("Audio playback error:", e);
+        resetUI();
+      });
+    }
+
+    function speak(text) {
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      utterance.pitch = isGhost ? 0.7 : (isSavage ? 1.0 : 1.35);
+      utterance.rate = isGhost ? 0.85 : 0.95;
+
+      utterance.onstart = () => {
+        isSpeaking = true;
+        statusBadge.innerText = "🗣️ PIKU IS RESPONDING...";
+        statusBadge.style.color = "#ff007f";
+        pikuStage.classList.add('talking-motion');
+        if (currentTab === 'voice') visualizer.classList.add('active');
+      };
+
+      utterance.onend = () => resetUI();
+      synth.speak(utterance);
+    }
+
+    function resetUI() {
+      isListening = false;
+      isSpeaking = false;
+      talkBtn.innerHTML = "🎙️ Tap to talk with Piku";
+      talkBtn.classList.remove('listening');
+      pikuStage.classList.remove('talking-motion');
+      visualizer.classList.remove('active');
+      resetStatus();
+    }
+
+    function resetStatus() {
+      if (isParty) {
+        statusBadge.innerText = "⚡ HOLOGRAM MULTIVERSE ACTIVE";
+        statusBadge.style.color = "#ff007f";
+      } else if (isGhost) {
+        statusBadge.innerText = "👁️ MIDNIGHT GHOST PROTOCOL";
+        statusBadge.style.color = "#ff2a2a";
+      } else if (isCheeky) {
+        statusBadge.innerText = "😈 CHEEKU MODE (Sambhal kar baat kare)";
+        statusBadge.style.color = "#ec4899";
+      } else if (isSavage) {
+        statusBadge.innerText = "🔥 SAVAGE MODE ACTIVE";
+        statusBadge.style.color = "#f97316";
+      } else {
+        statusBadge.innerText = "⚡ ONLINE // SYSTEM READY";
+        statusBadge.style.color = "#00f3ff";
+      }
+    }
+
+    function openShareCard(text) {
+      haptic(15);
+      document.getElementById('cardQuoteText').innerText = `"${text}"`;
+      document.getElementById('cardTitle').innerText = "Piku's Direct Quote";
+      document.getElementById('shareModal').classList.add('active');
+    }
+
+    function generatePersonaWrapped() {
+      haptic(20);
+      document.getElementById('cardTitle').innerText = "Your Persona Wrapped 🎴";
+      document.getElementById('statVibe').innerText = `${Math.floor(Math.random() * 20) + 80}%`;
+      
+      if (isCheeky) {
+        document.getElementById('statSavage').innerText = "😈 100% Cheeku";
+        document.getElementById('cardQuoteText').innerText = '"Double meaning baatein pakadne mein No. 1 hai tu!"';
+      } else if (isSavage) {
+        document.getElementById('statSavage').innerText = "🔥 100% Savage";
+        document.getElementById('cardQuoteText').innerText = '"Reels dekh ke timepass karne mein No.1 hai tu!"';
+      } else {
+        document.getElementById('statSavage').innerText = "💚 Wholesome";
+        document.getElementById('cardQuoteText').innerText = '"Dil se sunne wala ek cute sa dost!"';
+      }
+      
+      document.getElementById('shareModal').classList.add('active');
+    }
+
+    async function shareCardNative() {
+      haptic(15);
+      const text = document.getElementById('cardQuoteText').innerText;
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'dilseSuno - Piku AI',
+            text: `${text} — Check out Piku AI:`,
+            url: window.location.href
+          });
+        } catch (e) { console.log(e); }
+      } else {
+        alert("Screenshot le kar Instagram Story / WhatsApp par share karo!");
+      }
+    }
+
+    window.closeShareCard = () => {
+      haptic(10);
+      document.getElementById('shareModal').classList.remove('active');
+    };
+  </script>
+
+</body>
+</html>
