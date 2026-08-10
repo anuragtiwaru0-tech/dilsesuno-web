@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DilSeSuno by snyax.ai</title>
+
+  <link rel="manifest" href="data:application/json,{
+    'name': 'DilSeSuno by snyax.ai',
+    'short_name': 'Piku',
+    'start_url': '/',
+    'display': 'standalone',
+    'background_color': '#030014',
+    'theme_color': '#00f0ff'
+  }">
+
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: #030014;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    #starsCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .app-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 850px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px 12px;
+    }
+
+    .open-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 4px;
+      width: 100%;
+    }
+
+    .brand-title-box {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #00f0ff, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+
+    .brand-subtitle {
+      font-size: 10px;
+      color: #00f0ff;
+      text-align: right;
+      letter-spacing: 1px;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+
+    .status-ticker {
+      font-size: 11px;
+      color: #c084fc;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+    }
+
+    .streak-badge {
+      background: rgba(0, 240, 255, 0.15);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      color: #00f0ff;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .pills-wrapper {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 2px;
+      scrollbar-width: none;
+      z-index: 2;
+    }
+    .pills-wrapper::-webkit-scrollbar { display: none; }
+
+    .pill {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      color: #00f0ff;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    .pill.active {
+      background: linear-gradient(135deg, #00f0ff, #8b5cf6);
+      color: #000;
+      font-weight: 700;
+      border-color: #00f0ff;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+    }
+
+    .pill.roast-pill.active {
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      color: #fff;
+      border-color: #f87171;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+    }
+
+    .main-glass-card {
+      background: rgba(3, 0, 20, 0.01);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+      border-radius: 20px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      backdrop-filter: blur(2px);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.05);
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    /* 3D STAGE & ALIGNED GLOWING OVAL BASE */
+    .stage-room {
+      position: relative;
+      width: 100%;
+      height: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: height 0.3s ease;
+    }
+
+    .stage-room.voice-mode-stage {
+      height: 420px;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      --poster-color: transparent;
+      filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.25));
+      animation: floatIdle 3s infinite ease-in-out;
+      transition: filter 0.3s ease;
+    }
+
+    @keyframes floatIdle {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* DYNAMIC MOVING GLOWING OVAL BASE */
+    .glowing-oval {
+      position: absolute;
+      bottom: 12px;
+      width: 150px;
+      height: 32px;
+      background: radial-gradient(ellipse at center, rgba(0, 240, 255, 0.9) 0%, rgba(168, 85, 247, 0.35) 55%, transparent 80%);
+      border-radius: 50%;
+      border: 2px solid rgba(0, 240, 255, 0.75);
+      box-shadow: 0 0 25px #00f0ff, inset 0 0 15px #00f0ff;
+      pointer-events: none;
+      z-index: 1;
+      animation: ovalBreathing 3s infinite ease-in-out;
+      transition: all 0.3s ease;
+    }
+
+    @keyframes ovalBreathing {
+      0%, 100% { transform: scale(1) translateY(0); opacity: 0.85; }
+      50% { transform: scale(1.08) translateY(-4px); opacity: 1; box-shadow: 0 0 35px #00f0ff, inset 0 0 20px #00f0ff; }
+    }
+
+    /* TALKING SPEAKING GLOW STATE (PIKU BODY AURA + OVAL INTENSE GLOW) */
+    .stage-room.speaking model-viewer {
+      filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.95)) drop-shadow(0 0 40px rgba(168, 85, 247, 0.8));
+      animation: floatSpeaking 0.8s infinite alternate ease-in-out;
+    }
+
+    .stage-room.speaking .glowing-oval {
+      box-shadow: 0 0 55px #00f0ff, 0 0 35px #a855f7, inset 0 0 25px #00f0ff;
+      transform: scale(1.22);
+      animation: ovalPulseSpeaking 0.5s infinite alternate ease-in-out;
+    }
+
+    @keyframes floatSpeaking {
+      from { transform: translateY(-3px) scale(1.01); }
+      to { transform: translateY(-12px) scale(1.03); }
+    }
+
+    @keyframes ovalPulseSpeaking {
+      from { transform: scale(1.15); box-shadow: 0 0 35px #00f0ff, inset 0 0 20px #00f0ff; }
+      to { transform: scale(1.28); box-shadow: 0 0 65px #00f0ff, 0 0 40px #a855f7, inset 0 0 30px #00f0ff; }
+    }
+
+    .roast-warning {
+      display: none;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .chat-box {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 200px;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    .msg.user {
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+
+    .msg.bot {
+      background: rgba(0, 240, 255, 0.08);
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      color: #e0f7fa;
+    }
+
+    .msg.crisis {
+      background: rgba(220, 38, 38, 0.25);
+      border: 1px solid #ef4444;
+      color: #fecaca;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 25px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 8px 14px;
+      color: #fff;
+      outline: none;
+      font-size: 14px;
+    }
+
+    button.send-btn {
+      background: linear-gradient(135deg, #00f0ff, #8b5cf6);
+      border: none;
+      color: #000;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .voice-talk-btn-container {
+      display: none;
+      width: 100%;
+      padding: 10px 0;
+    }
+
+    .tap-to-talk-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #00f0ff, #a855f7);
+      border: none;
+      color: #000;
+      padding: 16px;
+      border-radius: 30px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    .tap-to-talk-btn:active { transform: scale(0.98); }
+
+    footer {
+      text-align: center;
+      padding: 10px;
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    footer a { color: #00f0ff; text-decoration: none; }
+
+    @media (min-width: 768px) {
+      .stage-room { height: 320px; }
+      .stage-room.voice-mode-stage { height: 480px; }
+      .chat-box { max-height: 250px; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="starsCanvas"></canvas>
+
+  <div class="app-container">
+
+    <div class="open-header">
+      <div class="brand-title-box">
+        <div class="brand-title">DilSeSuno</div>
+        <div class="brand-subtitle">by snyax.ai</div>
+      </div>
+      <div class="status-ticker">
+        <span class="streak-badge" id="streakBadge">🔥 1-Day Vent Streak</span>
+        <span>🌙 <span id="onlineCount">38</span> overthinkers online</span>
+      </div>
+    </div>
+
+    <div class="pills-wrapper">
+      <button onclick="setMode('voice', this)" class="pill active">🎙️ Voice Mode</button>
+      <button onclick="setMode('dilse', this)" class="pill">❤️ Dil Se</button>
+      <button onclick="setMode('bhai', this)" class="pill">🤝 Real Talk</button>
+      <button onclick="setMode('hype', this)" class="pill">⚡ Hype Up</button>
+      <button onclick="setMode('roast', this)" class="pill roast-pill">🔥 Roast</button>
+      <button onclick="setMode('gossip', this)" class="pill">🚨 Gossip Mode</button>
+    </div>
+
+    <div id="roastWarning" class="roast-warning">
+      ⚠️ Warning: Piku won't hold back in Roast Mode! Switch to 'Dil Se' if you need comfort today.
+    </div>
+
+    <div class="main-glass-card">
+
+      <div class="stage-room voice-mode-stage" id="stageRoom">
+        <model-viewer id="pikuModel" src="character.glb" alt="Piku 3D Companion" shadow-intensity="1"></model-viewer>
+        <div class="glowing-oval"></div>
+      </div>
+
+      <div class="chat-box" id="chatBox" style="display: none;">
+        <div class="msg bot" id="welcomeMsg">Connecting to Piku...</div>
+      </div>
+
+      <div class="input-area" id="inputArea" style="display: none;">
+        <input type="text" id="userInput" placeholder="Type or share your thoughts..." onkeypress="handleKeyPress(event)">
+        <button class="send-btn" onclick="sendMessage()">Send</button>
+      </div>
+
+      <div class="voice-talk-btn-container" id="voiceTalkContainer" style="display: block;">
+        <button class="tap-to-talk-btn" onclick="triggerVoiceInput()">Tap to Talk to Piku 🎙️</button>
+      </div>
+
+    </div>
+
+    <footer>
+      Piku is an AI companion for fun and casual venting, not a licensed medical or therapy tool.
+      <br><a href="#">Terms of Service & Privacy Policy</a>
+    </footer>
+
+  </div>
+
+  <script>
+    // 1. Moving Stars Background
+    const canvas = document.getElementById('starsCanvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initStars();
+    }
+
+    function initStars() {
+      stars = [];
+      const count = Math.floor((canvas.width * canvas.height) / 2800);
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.6,
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: (Math.random() - 0.5) * 0.25,
+          alpha: Math.random()
+        });
+      }
+    }
+
+    function animateStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+
+      stars.forEach(s => {
+        s.x += s.vx;
+        s.y += s.vy;
+        if (s.x < 0) s.x = canvas.width;
+        if (s.x > canvas.width) s.x = 0;
+        if (s.y < 0) s.y = canvas.height;
+        if (s.y > canvas.height) s.y = 0;
+
+        ctx.globalAlpha = s.alpha;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      requestAnimationFrame(animateStars);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    animateStars();
+
+    let currentMode = 'voice';
+    let voiceState = true;
+
+    // 2. Dynamic Online Ticker
+    function startDynamicOnlineTicker() {
+      const onlineElem = document.getElementById('onlineCount');
+      setInterval(() => {
+        const randomUsers = Math.floor(Math.random() * (50 - 20 + 1)) + 20;
+        onlineElem.innerText = randomUsers;
+      }, 4000);
+    }
+    startDynamicOnlineTicker();
+
+    // 3. Memory Greeting Init
+    function initMemoryOpening() {
+      const lastContext = localStorage.getItem('piku_last_context');
+      const nickname = localStorage.getItem('piku_nickname');
+      const name = localStorage.getItem('piku_name');
+      const welcomeMsg = document.getElementById('welcomeMsg');
+
+      if (lastContext) {
+        welcomeMsg.innerText = `Arey ${nickname || name || 'dost'}! Kya hua fir? Usne kuch bola ya abhi bhi overthink kar rahe ho?`;
+      } else {
+        welcomeMsg.innerText = "welcome to dilseSuno. I am piku,a secure and judgment-free AI companion here to listen to your thoughts, stress, or ideas whenever you are ready to speak or type.";
+      }
+    }
+    initMemoryOpening();
+
+    // 4. Vent Streak Counter
+    function initStreak() {
+      const lastVisit = localStorage.getItem('piku_last_vent');
+      const today = new Date().toDateString();
+      let streak = parseInt(localStorage.getItem('piku_streak') || '1');
+
+      if (lastVisit && lastVisit !== today) {
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        streak = (lastVisit === yesterday) ? streak + 1 : 1;
+        localStorage.setItem('piku_streak', streak);
+      }
+      localStorage.setItem('piku_last_vent', today);
+      document.getElementById('streakBadge').innerText = `🔥 ${streak}-Day Vent Streak`;
+    }
+    initStreak();
+
+    // 5. Mode Switcher
+    function setMode(mode, btnElement) {
+      currentMode = mode;
+      document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+      btnElement.classList.add('active');
+
+      const stageRoom = document.getElementById('stageRoom');
+      const chatBox = document.getElementById('chatBox');
+      const inputArea = document.getElementById('inputArea');
+      const voiceTalkContainer = document.getElementById('voiceTalkContainer');
+      const roastWarn = document.getElementById('roastWarning');
+
+      roastWarn.style.display = (mode === 'roast') ? 'block' : 'none';
+
+      if (mode === 'voice') {
+        stageRoom.classList.add('voice-mode-stage');
+        chatBox.style.display = 'none';
+        inputArea.style.display = 'none';
+        voiceTalkContainer.style.display = 'block';
+      } else {
+        stageRoom.classList.remove('voice-mode-stage');
+        chatBox.style.display = 'flex';
+        inputArea.style.display = 'flex';
+        voiceTalkContainer.style.display = 'none';
+      }
+    }
+
+    // 6. CUTE LOW-PITCH SPEECH SYNTHESIS ENGINE + GUARANTEED SPEAKING GLOW SYNC
+    function speakText(text) {
+      if ('speechSynthesis' in window && voiceState) {
+        window.speechSynthesis.cancel();
+
+        // Clean text symbols for glitch-free speech
+        const cleanText = text.replace(/[*_#~`]/g, '');
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = 'hi-IN';
+        utterance.rate = 0.95; // Smooth non-cracking speed
+        utterance.pitch = 0.85; // Low-pitch cute robo voice
+
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => 
+          v.lang.includes('hi') || v.name.includes('Google') || v.name.includes('Hindi') || v.name.includes('India')
+        );
+        if (preferredVoice) utterance.voice = preferredVoice;
+
+        const stageRoom = document.getElementById('stageRoom');
+
+        const startGlow = () => stageRoom.classList.add('speaking');
+        const stopGlow = () => stageRoom.classList.remove('speaking');
+
+        utterance.onstart = startGlow;
+        utterance.onend = stopGlow;
+        utterance.onerror = stopGlow;
+
+        // Force glow trigger immediately
+        startGlow();
+
+        window.speechSynthesis.speak(utterance);
+
+        // Fallback polling to safely turn off glow when TTS stops
+        const glowInterval = setInterval(() => {
+          if (!window.speechSynthesis.speaking) {
+            stopGlow();
+            clearInterval(glowInterval);
+          }
+        }, 250);
+      }
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
+
+    // 7. Voice Input Trigger
+    function triggerVoiceInput() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Voice recognition is not supported in this browser. Please type your message.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'hi-IN';
+      recognition.interimResults = false;
+
+      const talkBtn = document.querySelector('.tap-to-talk-btn');
+      talkBtn.innerText = "Listening... Speak now 🎙️";
+
+      recognition.start();
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        talkBtn.innerText = "Tap to Talk to Piku 🎙️";
+        processMessage(transcript);
+      };
+
+      recognition.onerror = () => {
+        talkBtn.innerText = "Tap to Talk to Piku 🎙️";
+      };
+    }
+
+    // 8. Chat Processing Helpers
+    function addMessage(text, sender, isCrisis = false) {
+      const chatBox = document.getElementById('chatBox');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `msg ${sender} ${isCrisis ? 'crisis' : ''}`;
+      msgDiv.innerText = text;
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') sendMessage();
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      addMessage(text, 'user');
+      processMessage(text);
+    }
+
+    async function processMessage(text) {
+      const lastContext = localStorage.getItem('piku_last_context') || '';
+      const lastTime = parseInt(localStorage.getItem('piku_last_time') || '0');
+      const currentTime = Date.now();
+      const hoursPassed = lastTime ? (currentTime - lastTime) / (1000 * 60 * 60) : 0;
+
+      const userProfile = {
+        name: localStorage.getItem('piku_name') || '',
+        age: localStorage.getItem('piku_age') || '',
+        gender: localStorage.getItem('piku_gender') || '',
+        nickname: localStorage.getItem('piku_nickname') || ''
+      };
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            mode: (currentMode === 'voice') ? 'dilse' : currentMode,
+            lastContext: lastContext,
+            hoursPassed: hoursPassed,
+            userProfile: userProfile,
+            voiceEnabled: voiceState
+          })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+          addMessage("Server issue ho gaya!", 'bot');
+          return;
+        }
+
+        addMessage(data.text, 'bot', data.isCrisis);
+
+        localStorage.setItem('piku_last_context', text.substring(0, 80));
+        localStorage.setItem('piku_last_time', currentTime.toString());
+
+        voiceState = data.voiceEnabled;
+
+        if (voiceState) {
+          speakText(data.text);
+        } else {
+          if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+          document.getElementById('stageRoom').classList.remove('speaking');
+        }
+
+      } catch (err) {
+        addMessage("Network glitch ho gaya!", 'bot');
+      }
+    }
+  </script>
+</body>
+</html>
